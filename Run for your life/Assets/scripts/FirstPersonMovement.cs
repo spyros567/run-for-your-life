@@ -13,6 +13,12 @@ public class FirstPersonMovement : MonoBehaviour
     public Transform groundCheck;
     public float groundDistance = 0.5f;
     public LayerMask groundMask;
+    public LayerMask enemyMask;
+    [SerializeField] GameObject hitbox;
+
+    [SerializeField] private Animator swordAnim;
+    [SerializeField] private int damage;
+    [SerializeField] private bool canAttack;
 
     //stamina
     private float maxStamina = 100.0f;
@@ -22,6 +28,7 @@ public class FirstPersonMovement : MonoBehaviour
     public bool canSprint = false;
     [SerializeField] float staminaDrain;
     [SerializeField] float staminaGain;
+    [SerializeField] float timer=0;
 
     Vector3 velocity;
     bool isGrounded;
@@ -30,6 +37,9 @@ public class FirstPersonMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         currentStamina = maxStamina;
+        canAttack = true;
+        Cursor.lockState=CursorLockMode.Locked;
+        Cursor.visible = false;
     }
     void Update()
     {
@@ -49,8 +59,41 @@ public class FirstPersonMovement : MonoBehaviour
         {
             currentStamina = 0;
         }
+        if(Input.GetKeyDown(KeyCode.Mouse0)&&canAttack)
+        {
+            Attack();
+        }
+        if(!canAttack)
+        {
+            timer += Time.deltaTime;
+            if(timer>1f)
+            {
+                timer = 0;
+                canAttack = true;
+            }
+        }
     }
 
+    void Attack()
+    {
+        swordAnim.SetTrigger("Attack");
+        canAttack = false;
+        
+        if(Physics.CheckSphere(this.transform.position,2f,enemyMask))
+        {
+            Collider[] enemies = Physics.OverlapSphere(this.transform.position, 2f, enemyMask);
+            foreach(Collider enemy in enemies)
+            {
+                enemy.gameObject.GetComponent<EnemyAI>().GetDamage(damage);
+            }
+        }
+    }
+
+    IEnumerator WaitForAttack()
+    {
+        yield return new WaitForSeconds(swordAnim.GetCurrentAnimatorStateInfo(0).length + swordAnim.GetCurrentAnimatorStateInfo(0).normalizedTime);
+        canAttack = true;
+    }
     void Movement() 
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);

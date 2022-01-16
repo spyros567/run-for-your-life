@@ -12,13 +12,23 @@ public class EnemyAI : MonoBehaviour
     float attackDistance = 2;
     float attackTimer = 0;
 
+    int currentHealth;
+    int maxHealth = 100;
+
     // Start is called before the first frame update
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
         animator = GetComponent<Animator>();
+        currentHealth = maxHealth;
     }
+
+    public void GetDamage(int damage)
+    {
+        currentHealth -= damage;
+    }
+
 
     // Update is called once per frame
     void Update()
@@ -32,8 +42,18 @@ public class EnemyAI : MonoBehaviour
         {
             Attack();
         }
+
+        if(currentHealth<=0)
+        {
+            StartCoroutine(DeathDelay());
+        }
     }
 
+    IEnumerator DeathDelay()
+    {
+        yield return new WaitForSeconds(1f);
+        Destroy(this.gameObject);
+    }
     private void Attack()
     {
         attackTimer += Time.deltaTime;
